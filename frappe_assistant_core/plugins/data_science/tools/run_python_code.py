@@ -716,6 +716,31 @@ Use tools API directly - no imports needed."""
                 code = new_code
                 fixes_applied.append("✓ Added .copy() to DataFrame slices to avoid SettingWithCopyWarning")
 
+        # Fix 6: Fix datetime.now() to datetime.datetime.now()
+        # Pattern: datetime.now() -> datetime.datetime.now() or dt.now()
+        datetime_now_pattern = r'\bdatetime\.now\(\)'
+        if re.search(datetime_now_pattern, code):
+            code = re.sub(datetime_now_pattern, 'dt.now()', code)
+            if code != original_code:
+                fixes_applied.append("✓ Fixed datetime.now() to dt.now() (datetime.datetime.now())")
+                original_code = code
+
+        # Fix 7: Fix datetime.date() to datetime.date.today() or date.today()
+        datetime_date_pattern = r'\bdatetime\.date\(\)'
+        if re.search(datetime_date_pattern, code):
+            code = re.sub(datetime_date_pattern, 'date.today()', code)
+            if code != original_code:
+                fixes_applied.append("✓ Fixed datetime.date() to date.today()")
+                original_code = code
+
+        # Fix 8: Fix datetime.timedelta to timedelta
+        datetime_timedelta_pattern = r'\bdatetime\.timedelta\('
+        if re.search(datetime_timedelta_pattern, code):
+            code = re.sub(datetime_timedelta_pattern, 'timedelta(', code)
+            if code != original_code:
+                fixes_applied.append("✓ Fixed datetime.timedelta() to timedelta()")
+                original_code = code
+
         return {"success": True, "code": code, "fixes_applied": fixes_applied}
 
     def _sanitize_unicode(self, code: str) -> Dict[str, Any]:
@@ -1108,6 +1133,7 @@ Use tools API directly - no imports needed."""
 
         # Add standard libraries (safe mathematical and utility libraries)
         import datetime
+        from datetime import datetime as dt, date, time, timedelta
         import decimal
         import fractions
         import json
@@ -1123,6 +1149,10 @@ Use tools API directly - no imports needed."""
                 "decimal": decimal,
                 "fractions": fractions,
                 "datetime": datetime,
+                "dt": dt,  # Alias for datetime.datetime
+                "date": date,
+                "time": time,
+                "timedelta": timedelta,
                 "json": json,
                 "re": re,
                 "random": random,

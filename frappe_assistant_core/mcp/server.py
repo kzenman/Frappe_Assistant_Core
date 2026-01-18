@@ -184,6 +184,8 @@ class MCPServer:
                 result = self._handle_initialize(params)
             elif method == "tools/list":
                 result = self._handle_tools_list(params)
+            elif method == "tools/get":
+                result = self._handle_tools_get(params)
             elif method == "tools/call":
                 frappe.logger().info(
                     f"MCP tools/call: tool={params.get('name')}, args={json.dumps(params.get('arguments', {}), default=str)[:200]}"
@@ -266,7 +268,38 @@ class MCPServer:
             tools_list.append(tool_spec)
 
         return {"tools": tools_list}
-
+    def _handle_tools_get(self, params: Dict) -> Dict:
+        """
+        Handle tools/get request - get a single tool by name.
+        
+        Custom extension to MCP protocol for convenience.
+        
+        Args:
+            params: {"name": "tool_name"}
+            
+        Returns:
+            {"tool": {...}} or error if not found
+        """
+        tool_name = params.get("name")
+        
+        if not tool_name:
+            raise ValueError("Parameter 'name' is required for tools/get")
+        
+        if tool_name not in self._tool_registry:
+            raise ValueError(f"Tool '{tool_name}' not found")
+        
+        tool = self._tool_registry[tool_name]
+        tool_spec = {
+            "name": tool["name"],
+            "description": tool["description"],
+            "inputSchema": tool["inputSchema"],
+        }
+        
+        # Add annotations if available (like version, category)
+        if "annotations" in tool and tool["annotations"]:
+            tool_spec["annotations"] = tool["annotations"]
+        
+        return {"tool": tool_spec}
     def _handle_tools_call(self, params: Dict) -> Dict:
         """
         Handle tools/call request.
